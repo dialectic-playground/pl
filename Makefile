@@ -54,7 +54,7 @@ toolchain:
 	python3 --version || python --version
 	make --version | head -1
 	@version="$$(perl -e 'print "$$^V\n"')"; echo "$$version"; echo "$$version" | grep -q '^v5\.44\.' \
-		|| { echo "toolchain: expected a version matching ^v5\.44\." >&2; exit 1; }
+		|| { echo 'toolchain: expected a version matching ^v5\.44\.' >&2; exit 1; }
 	cpanm --version | head -1
 
 projects:
