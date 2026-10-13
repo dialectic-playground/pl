@@ -1,0 +1,6 @@
+# Development tools for 00-hello-world. dp-hello itself and its unit tests (Test::More) use
+# only core modules. Versions are exact; cpanfile.snapshot (Carton) locks every dependency.
+on develop => sub {
+    requires 'Perl::Critic', '== 1.156';
+    requires 'Perl::Tidy',   '== 20260826';
+};

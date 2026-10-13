@@ -10,3 +10,12 @@ __pycache__/
 *.swp
 .DS_Store
 Thumbs.db
+
+# Repository-specific
+# Carton: locked development tools installed per project (cpanfile.snapshot is committed)
+local/
+.carton/
+# perltidy leftovers
+*.tdy
+*.ERR
+perltidy.LOG

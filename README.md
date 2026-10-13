@@ -16,7 +16,7 @@ This repository implements the eleven projects of the
 specified to the byte by the curriculum and verified by its black-box tests on Linux, macOS,
 and Windows.
 
-**Status:** repository and toolchain ready; no projects implemented yet.
+**Status:** Implemented projects: 00-hello-world.
 
 ## Perl at a glance
 
@@ -38,6 +38,22 @@ and Windows.
 | Native CI | shogo82148/actions-setup-perl (5.42, includes cpanm) |
 
 `make toolchain` verifies that the container and native toolchains are on this release line.
+
+| Tool | Where it comes from |
+| :-- | :-- |
+| Test::More, prove | Perl core (unit tests in each project's `src/t/`) |
+| Carton 1.0.35 | Container image; native CI installs the same version with cpanm |
+| Perl::Critic, Perl::Tidy | Each project's `cpanfile` (exact versions) and `cpanfile.snapshot` (Carton lockfile), installed into the project's `local/` on first `make lint` / `make format` |
+| gcc, libc6-dev | Container image (XS dependencies of Perl::Critic); native: the platform's compiler |
+
+The tools themselves use only core modules. Dependabot has no Perl ecosystem, so the
+snapshot is updated deliberately (`carton update` in the container).
+
+**Windows:** run the tools and `make` from Git Bash or MSYS2, which honor `#!` lines. Git Bash
+puts its own `/usr/bin/perl` (an older Perl) first on `PATH`; put your Perl 5.42 ahead of it
+(CI does this with `BASH_ENV`, see `.github/workflows/ci.yml`). Command-line arguments reach
+perl.exe in the ANSI code page; dp-hello converts them to UTF-8, so characters outside that
+code page (for example CJK on a cp1252 system) cannot be represented.
 
 ## Layout
 
