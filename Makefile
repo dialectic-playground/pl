@@ -41,9 +41,14 @@ check-repository:
 		[ -f "$$slug/Makefile" ] || { echo "missing project workspace: $$slug/Makefile"; status=1; }; \
 	done; \
 	marker="TEMPLATE"; marker="$$marker:"; \
-	if grep -rn --exclude-dir=.git --exclude-dir=.github --exclude-dir=tools \
-	        --exclude-dir=$(CURRICULUM_ROOT) --exclude-dir=local "$$marker" .; then \
-		echo "replace every $$marker marker listed above"; status=1; \
+	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
+		matches=$$(git grep -n "$$marker" -- . ':!.github' ':!tools' ':!$(CURRICULUM_ROOT)'); \
+	else \
+		matches=$$(grep -rn --exclude-dir=.git --exclude-dir=.github --exclude-dir=tools \
+		        --exclude-dir=$(CURRICULUM_ROOT) --exclude-dir=local "$$marker" .); \
+	fi; \
+	if [ -n "$$matches" ]; then \
+		printf '%s\n' "$$matches"; echo "replace every $$marker marker listed above"; status=1; \
 	fi; \
 	[ $$status -eq 0 ] && echo "repository: standard files, $(CURRICULUM_ROOT), and project workspaces present"; \
 	exit $$status

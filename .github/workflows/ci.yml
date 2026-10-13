@@ -18,6 +18,9 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  # Weekly run catches toolchain and runner drift even when nothing changes here.
+  schedule:
+    - cron: "23 4 * * 1"
 
 permissions:
   contents: read
@@ -151,10 +154,31 @@ jobs:
     if: always()
     needs: [container, native, shared-tooling, dco]
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
     steps:
       - name: Fail if any required job failed or was cancelled
         if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
         run: exit 1
 
-      - name: All required jobs passed
-        run: echo "All required jobs succeeded or were skipped."
+      # Matrix jobs report one combined result to `needs`, which can hide a cancelled leg
+      # (for example a runner that never started). Check every job of this run attempt.
+      - name: Require every job in this run to have succeeded
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOBS_URL: repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}/jobs
+          IGNORED_JOBS: "CI result"
+        run: |
+          jobs=$(gh api "$JOBS_URL" --paginate --jq '.jobs[] | "\(.name)\t\(.conclusion)"')
+          printf '%s\n' "$jobs"
+          bad=$(printf '%s\n' "$jobs" | awk -F '\t' -v ignored="$IGNORED_JOBS" '
+            BEGIN { n = split(ignored, list, "|"); for (i = 1; i <= n; i++) skip[list[i]] = 1 }
+            $1 in skip { next }
+            $1 == "DCO" && $2 == "skipped" { next }
+            $2 != "success" { print }')
+          if [ -n "$bad" ]; then
+            echo "::error::Not every job succeeded:"
+            printf '%s\n' "$bad"
+            exit 1
+          fi
+          echo "All jobs in this run succeeded."
