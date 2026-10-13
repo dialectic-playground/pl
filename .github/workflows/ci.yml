@@ -6,7 +6,7 @@
 # project listed in IMPLEMENTED in the root Makefile.
 # - Container (podman): `make check` in the toolchain image (./Containerfile), on Linux.
 # - Native (Linux, macOS, Windows): `make check roundtrip` with DP_RUNTIME=local;
-#   toolchain: shogo82148/actions-setup-perl (5.44, includes cpanm).
+#   toolchain: shogo82148/actions-setup-perl (5.42, includes cpanm).
 # - Shared tooling, DCO, and the required "CI result" check, as in every repository.
 #
 # Actions are pinned to full commit SHAs (organization policy); Dependabot keeps them current.
@@ -72,10 +72,10 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install make && echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
 
-      - name: Set up Perl 5.44
+      - name: Set up Perl 5.42
         uses: shogo82148/actions-setup-perl@8b574cdc2dffdae49f803204a4f2b716a2fa1db7 # v1.44.2
         with:
-          perl-version: '5.44'
+          perl-version: '5.42'
 
       - name: make check roundtrip
         run: make check roundtrip

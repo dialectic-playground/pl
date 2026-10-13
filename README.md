@@ -32,10 +32,10 @@ and Windows.
 
 | | |
 | :-- | :-- |
-| Release line | Perl 5.44 |
+| Release line | Perl 5.42 (the newest line available on Linux, macOS, and Windows) |
 | Build / package tool | cpanm (cpanfile) |
-| Container image | `perl:5.44-slim-trixie`, pinned by digest ([`Containerfile`](Containerfile)) |
-| Native CI | shogo82148/actions-setup-perl (5.44, includes cpanm) |
+| Container image | `perl:5.42-slim-trixie`, pinned by digest ([`Containerfile`](Containerfile)) |
+| Native CI | shogo82148/actions-setup-perl (5.42, includes cpanm) |
 
 `make toolchain` verifies that the container and native toolchains are on this release line.
 

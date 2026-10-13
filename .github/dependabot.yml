@@ -18,7 +18,7 @@ updates:
       interval: weekly
     commit-message:
       prefix: build
-    # The release line (Perl 5.44) is a deliberate choice shared with the native CI and
+    # The release line (Perl 5.42 (the newest line available on Linux, macOS, and Windows)) is a deliberate choice shared with the native CI and
     # `make toolchain`; Dependabot refreshes digests but never changes minor or major versions.
     ignore:
       - dependency-name: "*"

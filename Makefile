@@ -49,12 +49,12 @@ check-repository:
 	exit $$status
 
 # Prints each tool's version and fails unless it is on the repository's release line
-# (Perl 5.44), so the container image and the native CI toolchains stay in step.
+# (Perl 5.42 (the newest line available on Linux, macOS, and Windows)), so the container image and the native CI toolchains stay in step.
 toolchain:
 	python3 --version || python --version
 	make --version | head -1
-	@version="$$(perl -e 'print "$$^V\n"')"; echo "$$version"; echo "$$version" | grep -q '^v5\.44\.' \
-		|| { echo 'toolchain: expected a version matching ^v5\.44\.' >&2; exit 1; }
+	@version="$$(perl -e 'print "$$^V\n"')"; echo "$$version"; echo "$$version" | grep -q '^v5\.42\.' \
+		|| { echo 'toolchain: expected a version matching ^v5\.42\.' >&2; exit 1; }
 	cpanm --version | head -1
 
 projects:
