@@ -1,15 +1,14 @@
-# CI baseline for repositories created from dialectic-playground/repo-template.
+# CI for dialectic-playground/pl (Perl), from the curriculum's CI template
+# (sdlc-curriculum/shared/ci/cross-platform-ci.yml).
 #
-# Container-first: the checks are make targets (see Makefile), run two ways:
-# - Container (podman): `make check` in the repository's toolchain image (./Containerfile).
-# - Native (ubuntu-latest): `make check` with DP_RUNTIME=local. Add the native toolchain
-#   setup here; curriculum language repositories also run natively on macOS and Windows.
-# - Shared tooling: tools/dp-run and tools/container.mk match the canonical copies.
-# - DCO: Signed-off-by on every pull-request commit.
-# - "CI result" is the single check required by the branch ruleset (same name in every repo).
+# Every job runs the repository's make targets, so CI needs no edits as projects are
+# implemented: `make check` covers the repository, the toolchain versions, and every
+# project listed in IMPLEMENTED in the root Makefile.
+# - Container (podman): `make check` in the toolchain image (./Containerfile), on Linux.
+# - Native (Linux, macOS, Windows): `make check roundtrip` with DP_RUNTIME=local;
+#   toolchain: shogo82148/actions-setup-perl (5.42, includes cpanm).
+# - Shared tooling, DCO, and the required "CI result" check, as in every repository.
 #
-# Language repositories replace this file with the curriculum's CI template
-# (sdlc-curriculum/shared/ci/cross-platform-ci.yml), which has the same jobs.
 # Actions are pinned to full commit SHAs (organization policy); Dependabot keeps them current.
 name: CI
 
@@ -29,8 +28,10 @@ jobs:
     env:
       DP_RUNTIME: podman
     steps:
-      - name: Check out repository
+      - name: Check out repository (with curriculum submodule)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
 
       - name: Show toolchain environment
         run: make dp-info
@@ -39,16 +40,45 @@ jobs:
         run: make check
 
   native:
-    name: Native (ubuntu-latest)
-    runs-on: ubuntu-latest
+    name: Native (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     env:
       DP_RUNTIME: local
+    defaults:
+      run:
+        # Git Bash on Windows, so the Makefile's POSIX recipes behave identically everywhere.
+        shell: bash
     steps:
-      - name: Check out repository
+      - name: Check out repository (with curriculum submodule)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
 
-      - name: make check
-        run: make check
+      - name: Set up Python (black-box test runner)
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Ensure GNU Make is available
+        if: runner.os == 'Windows'
+        run: command -v make || choco install make --no-progress -y
+
+      # macOS ships GNU Make 3.81; BASE-MAKEFILE requires >= 3.82.
+      - name: Use current GNU Make (macOS)
+        if: runner.os == 'macOS'
+        run: brew install make && echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
+
+      - name: Set up Perl 5.42
+        uses: shogo82148/actions-setup-perl@8b574cdc2dffdae49f803204a4f2b716a2fa1db7 # v1.44.2
+        with:
+          perl-version: '5.42'
+
+      - name: make check roundtrip
+        run: make check roundtrip
 
   shared-tooling:
     name: Shared tooling

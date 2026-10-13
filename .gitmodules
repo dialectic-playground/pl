@@ -1,0 +1,3 @@
+[submodule "sdlc-curriculum"]
+	path = sdlc-curriculum
+	url = https://github.com/dialectic-playground/sdlc-curriculum
