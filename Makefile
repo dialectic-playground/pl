@@ -1,45 +1,75 @@
-# Makefile for REPO-NAME (container-first; see tools/container.mk).
+# Makefile for dialectic-playground/pl: Perl implementations of the SDLC curriculum.
 #
 #   make                 same as `make check`
-#   make check           everything CI checks
+#   make check           everything CI checks: repository, toolchain, every implemented project
+#   make toolchain       print and verify the toolchain versions
+#   make projects        `make all lint test test-hidden` in every implemented project
+#   make roundtrip       install/uninstall round trip for every implemented project (host)
 #   make dp-info | dp-shell | dp-image
-#
-# TEMPLATE: add this repository's targets (build, test, lint, …) inside the guard below, make
-# `check` run everything CI checks, and document them in this header.
 #
 # Every goal runs in the toolchain container built from ./Containerfile: podman, then docker,
 # then the local system. Override with DP_RUNTIME=podman|docker|local or DP_IMAGE=<image>.
+# roundtrip and help act on the host, so they always run locally.
 
-DP_HOST_GOALS += help
+# Project directories whose implementation is complete enough to build and test, in
+# curriculum order (for example: 00-hello-world 01-echo). CI covers exactly these.
+IMPLEMENTED :=
+
+DP_HOST_GOALS += help roundtrip
 include tools/container.mk
 ifeq ($(DP_DELEGATE),)
 
 SHELL := /bin/sh
 .DEFAULT_GOAL := check
+CURRICULUM_ROOT := sdlc-curriculum
 STANDARD_FILES := LICENSE README.md Containerfile Makefile .editorconfig .gitattributes \
-	.gitignore .devcontainer/devcontainer.json .github/CODEOWNERS .github/dependabot.yml \
-	.github/workflows/ci.yml tools/dp-run tools/container.mk
-.PHONY: check check-repository help
+	.gitignore .gitmodules .devcontainer/devcontainer.json .github/CODEOWNERS \
+	.github/dependabot.yml .github/workflows/ci.yml tools/dp-run tools/container.mk \
+	$(CURRICULUM_ROOT)/curriculum.toml
+.PHONY: check check-repository toolchain projects roundtrip help
 
-check: check-repository
+check: check-repository toolchain projects
 
-# The standard files exist, and (except in repo-template itself) no template markers remain.
+# Standard files present, the curriculum submodule checked out, a workspace for every
+# curriculum project, and no unfinished template markers.
 check-repository:
 	@status=0; \
 	for file in $(STANDARD_FILES); do \
-		[ -f "$$file" ] || { echo "missing standard file: $$file"; status=1; }; \
+		[ -f "$$file" ] || { echo "missing: $$file (submodule: git submodule update --init)"; status=1; }; \
 	done; \
-	if git config --get remote.origin.url | grep -q 'dialectic-playground/repo-template'; then \
-		echo "repo-template: template markers are expected here; skipping the marker check"; \
-	else \
-		marker="TEMPLATE"; marker="$$marker:"; \
-		if grep -rn --exclude-dir=.git --exclude-dir=.github --exclude-dir=tools "$$marker" .; then \
-			echo "replace every $$marker marker listed above"; status=1; \
-		fi; \
+	for slug in $$(sed -n 's/^slug = "\(.*\)"/\1/p' $(CURRICULUM_ROOT)/curriculum.toml 2>/dev/null); do \
+		[ -f "$$slug/Makefile" ] || { echo "missing project workspace: $$slug/Makefile"; status=1; }; \
+	done; \
+	marker="TEMPLATE"; marker="$$marker:"; \
+	if grep -rn --exclude-dir=.git --exclude-dir=.github --exclude-dir=tools \
+	        --exclude-dir=$(CURRICULUM_ROOT) "$$marker" .; then \
+		echo "replace every $$marker marker listed above"; status=1; \
 	fi; \
+	[ $$status -eq 0 ] && echo "repository: standard files, $(CURRICULUM_ROOT), and project workspaces present"; \
 	exit $$status
 
+# Prints each tool's version and fails unless it is on the repository's release line
+# (Perl 5.44), so the container image and the native CI toolchains stay in step.
+toolchain:
+	python3 --version || python --version
+	make --version | head -1
+	perl -e 'print "$$^V\n"' | tee /dev/stderr | grep -q '^v5\.44\.'
+	cpanm --version | head -1
+
+projects:
+	@[ -n "$(strip $(IMPLEMENTED))" ] || echo "projects: none implemented yet (IMPLEMENTED is empty)"
+	@for project in $(IMPLEMENTED); do \
+		$(MAKE) --no-print-directory -C "$$project" all lint test test-hidden || exit 1; \
+	done
+
+roundtrip:
+	@prefix="$${RUNNER_TEMP:-$${TMPDIR:-/tmp}}/dp-roundtrip"; \
+	for project in $(IMPLEMENTED); do \
+		$(MAKE) --no-print-directory -C "$$project" install PREFIX="$$prefix" \
+			&& $(MAKE) --no-print-directory -C "$$project" uninstall PREFIX="$$prefix" || exit 1; \
+	done; echo "roundtrip: $(words $(IMPLEMENTED)) project(s)"
+
 help:
-	@sed -n '3,11p' Makefile | sed 's/^# \{0,1\}//'
+	@sed -n '4,13p' Makefile | sed 's/^# \{0,1\}//'
 
 endif
