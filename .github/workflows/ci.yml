@@ -6,7 +6,7 @@
 # project listed in IMPLEMENTED in the root Makefile.
 # - Container (podman): `make check` in the toolchain image (./Containerfile), on Linux.
 # - Native (Linux, macOS, Windows): `make check roundtrip` with DP_RUNTIME=local;
-#   toolchain: shogo82148/actions-setup-perl (5.42, includes cpanm and Carton; on Windows,
+#   toolchain: shogo82148/actions-setup-perl (5.42, includes cpanm; plus Carton; on Windows,
 #   BASH_ENV puts it ahead of Git Bash's own perl).
 # - Shared tooling, DCO, and the required "CI result" check, as in every repository.
 #
@@ -91,6 +91,11 @@ jobs:
           $file = (Join-Path $env:RUNNER_TEMP 'prefer-setup-perl.sh').Replace('\', '/')
           Set-Content -NoNewline -Path $file -Value ('PATH="$(cygpath -u ''' + $dir + '''):$PATH"')
           "BASH_ENV=$file" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      # actions-setup-perl ships carton only as a fatpacked script; install the module (the
+      # version the container image uses), which the project Makefiles run as Carton::CLI.
+      - name: Install Carton
+        run: perl -S cpanm --notest --quiet MIYAGAWA/Carton-v1.0.35.tar.gz
 
       - name: Show the Perl toolchain
         run: command -v perl && perl -e 'print "$^V $^X\n"' && perl -MCarton -e 'print "Carton $Carton::VERSION\n"'
