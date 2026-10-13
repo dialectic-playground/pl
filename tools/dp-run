@@ -1,0 +1,178 @@
+#!/bin/sh
+# dp-run: run a command in this repository's toolchain container (container-first).
+#
+# Canonical source: https://github.com/dialectic-playground/.github/blob/main/tools/dp-run
+# Every repository carries a byte-identical copy at tools/dp-run; CI checks for drift.
+#
+# Usage:
+#   tools/dp-run [--port N]... [--] COMMAND [ARG]...   run COMMAND in the toolchain environment
+#   tools/dp-run --shell                               interactive shell in that environment
+#   tools/dp-run --resolve                             print the runtime: podman, docker, or local
+#   tools/dp-run --image-ref                           print (building if needed) the image
+#   tools/dp-run --info                                print runtime, image, and mounts
+#
+# The repository root (git toplevel) is mounted read-write at the same path inside the
+# container (Windows: /workspace), the working directory is preserved, and files are created
+# with your user and group IDs. A per-user cache (~/.cache/dialectic-playground) is mounted at
+# /dp-cache for HOME and tool caches.
+#
+# Environment:
+#   DP_RUNTIME       auto (default: podman, then docker, then local) | podman | docker | local
+#   DP_IMAGE         image to use instead of building the repository's Containerfile
+#   DP_PLATFORM      platform for build and run, e.g. linux/amd64 (default: the host's)
+#   DP_RUN_ARGS      extra arguments for `<runtime> run` (split on whitespace)
+#   DP_QUIET=1       do not print the one-line banner on standard error
+#   DP_IN_CONTAINER  set inside the toolchain containers; forces local execution (no nesting)
+set -eu
+
+PROG=dp-run
+CACHE_MOUNT=/dp-cache
+
+die() { printf '%s: error: %s\n' "$PROG" "$*" >&2; exit 2; }
+note() { [ "${DP_QUIET:-}" = 1 ] || printf '%s: %s\n' "$PROG" "$*" >&2; }
+
+is_windows() {
+  case "$(uname -s 2>/dev/null)" in MINGW*|MSYS*|CYGWIN*) return 0 ;; esac
+  return 1
+}
+
+repo_root() {
+  git rev-parse --show-toplevel 2>/dev/null || pwd
+}
+
+# The engine that will execute commands: podman, docker, or local.
+resolve_runtime() {
+  if [ -n "${DP_IN_CONTAINER:-}" ]; then echo local; return; fi
+  case "${DP_RUNTIME:-auto}" in
+    local) echo local ;;
+    podman|docker)
+      command -v "$DP_RUNTIME" >/dev/null 2>&1 \
+        || die "DP_RUNTIME=$DP_RUNTIME, but '$DP_RUNTIME' is not installed"
+      echo "$DP_RUNTIME" ;;
+    auto|"")
+      for engine in podman docker; do
+        if command -v "$engine" >/dev/null 2>&1 && "$engine" info >/dev/null 2>&1; then
+          echo "$engine"; return
+        fi
+      done
+      echo local ;;
+    *) die "invalid DP_RUNTIME '$DP_RUNTIME' (expected auto, podman, docker, or local)" ;;
+  esac
+}
+
+sha256_of() {
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1
+  else shasum -a 256 "$1" | cut -d' ' -f1; fi
+}
+
+platform_args() {
+  if [ -n "${DP_PLATFORM:-}" ]; then printf -- '--platform\n%s\n' "$DP_PLATFORM"; fi
+}
+
+# Print the image reference, building ./Containerfile (tagged by its content hash) if needed.
+image_ref() {
+  engine=$1 root=$2
+  if [ -n "${DP_IMAGE:-}" ]; then echo "$DP_IMAGE"; return; fi
+  [ -f "$root/Containerfile" ] || die "no Containerfile in $root (or set DP_IMAGE)"
+  name=$(basename "$root" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9._\n-' '-' | sed 's/^[.-]*//')
+  tag="localhost/dp-${name:-repo}:$(sha256_of "$root/Containerfile" | cut -c1-12)${DP_PLATFORM:+-$(echo "$DP_PLATFORM" | tr '/' '-')}"
+  if ! "$engine" image inspect "$tag" >/dev/null 2>&1; then
+    note "building $tag from Containerfile (first use only)"
+    context=$(mktemp -d)
+    # shellcheck disable=SC2046  # platform_args emits zero or two separate words
+    "$engine" build $(platform_args) --tag "$tag" --file "$root/Containerfile" "$context" >&2 \
+      || { rmdir "$context"; die "image build failed"; }
+    rmdir "$context"
+  fi
+  echo "$tag"
+}
+
+# run_in_container ENGINE [RUN-OPTION]... IMAGE COMMAND [ARG]...
+run_in_container() {
+  engine=$1; shift
+  root=$(repo_root)
+  workdir=$(pwd)
+  cache="${XDG_CACHE_HOME:-$HOME/.cache}/dialectic-playground"
+  mkdir -p "$cache/home" "$cache/xdg"
+
+  host_root=$root container_root=$root container_workdir=$workdir host_cache=$cache
+  if is_windows; then
+    host_root=$(cd "$root" && pwd -W)
+    host_cache=$(cd "$cache" && pwd -W)
+    container_root=/workspace
+    container_workdir="/workspace${workdir#"$root"}"
+    export MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*'
+  fi
+
+  label=
+  if [ -e /sys/fs/selinux/enforce ]; then label=:z; fi
+
+  set -- --rm --init --interactive \
+    --volume "$host_root:$container_root$label" \
+    --volume "$host_cache:$CACHE_MOUNT$label" \
+    --workdir "$container_workdir" \
+    --env DP_IN_CONTAINER=1 \
+    --env HOME="$CACHE_MOUNT/home" \
+    --env XDG_CACHE_HOME="$CACHE_MOUNT/xdg" \
+    --env DP_BIND_ADDRESS=0.0.0.0 \
+    "$@"
+  if [ -t 0 ] && [ -t 1 ]; then set -- --tty "$@"; fi
+  if ! is_windows; then
+    case $engine in
+      podman) set -- --userns=keep-id "$@" ;;
+      docker) set -- --user "$(id -u):$(id -g)" "$@" ;;
+    esac
+  fi
+  for var in CI GITHUB_ACTIONS TERM NO_COLOR DP_QUIET; do
+    eval "value=\${$var:-}"
+    # shellcheck disable=SC2154  # value is assigned by eval
+    if [ -n "$value" ]; then set -- --env "$var=$value" "$@"; fi
+  done
+  # shellcheck disable=SC2046,SC2086  # deliberate word splitting of the optional arguments
+  set -- $(platform_args) ${DP_RUN_ARGS:-} "$@"
+  exec "$engine" run "$@"
+}
+
+main() {
+  ports=
+  while [ $# -gt 0 ]; do
+    case $1 in
+      --resolve) resolve_runtime; return ;;
+      --image-ref)
+        engine=$(resolve_runtime)
+        [ "$engine" = local ] && die "the local runtime uses no image"
+        image_ref "$engine" "$(repo_root)"; return ;;
+      --info)
+        engine=$(resolve_runtime)
+        printf 'runtime:  %s (DP_RUNTIME=%s)\n' "$engine" "${DP_RUNTIME:-auto}"
+        printf 'root:     %s\n' "$(repo_root)"
+        if [ "$engine" != local ]; then
+          printf 'image:    %s\n' "$(image_ref "$engine" "$(repo_root)")"
+          printf 'cache:    %s -> %s\n' "${XDG_CACHE_HOME:-$HOME/.cache}/dialectic-playground" "$CACHE_MOUNT"
+        fi
+        return ;;
+      --shell) shift; set -- sh -c 'command -v bash >/dev/null && exec bash || exec sh' "$@"; break ;;
+      --port)
+        [ $# -ge 2 ] || die "--port needs a port number"
+        ports="$ports $2"; shift 2 ;;
+      --) shift; break ;;
+      -*) die "unknown option: $1" ;;
+      *) break ;;
+    esac
+  done
+  [ $# -gt 0 ] || die "usage: $PROG [--port N]... [--] COMMAND [ARG]...  (see the header of this script)"
+
+  engine=$(resolve_runtime)
+  if [ "$engine" = local ]; then
+    note "local: $*"
+    exec "$@"
+  fi
+  note "$engine: $*"
+  port_args=
+  for port in $ports; do port_args="$port_args --publish 127.0.0.1:$port:$port"; done
+  # shellcheck disable=SC2086  # port_args holds zero or more whole options
+  set -- $port_args "$(image_ref "$engine" "$(repo_root)")" "$@"
+  run_in_container "$engine" "$@"
+}
+
+main "$@"

@@ -1,0 +1,11 @@
+# Shared attributes (identical base in every Dialectic Playground repository).
+# Check out every text file with LF on every OS (GitHub's Windows runners default to
+# core.autocrlf=true).
+* text=auto eol=lf
+
+# Binary files: never convert or diff as text.
+*.png binary
+*.ico binary
+*.jpg binary
+*.gif binary
+*.pdf binary

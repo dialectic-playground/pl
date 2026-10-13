@@ -1,0 +1,12 @@
+# Shared ignores (identical base in every Dialectic Playground repository).
+# Python tooling (scripts, test runners, docs builds)
+__pycache__/
+*.py[cod]
+.venv/
+
+# Editors and operating systems
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

@@ -1,0 +1,107 @@
+# CI baseline for repositories created from dialectic-playground/repo-template.
+#
+# Container-first: the checks are make targets (see Makefile), run two ways:
+# - Container (podman): `make check` in the repository's toolchain image (./Containerfile).
+# - Native (ubuntu-latest): `make check` with DP_RUNTIME=local. Add the native toolchain
+#   setup here; curriculum language repositories also run natively on macOS and Windows.
+# - Shared tooling: tools/dp-run and tools/container.mk match the canonical copies.
+# - DCO: Signed-off-by on every pull-request commit.
+# - "CI result" is the single check required by the branch ruleset (same name in every repo).
+#
+# Language repositories replace this file with the curriculum's CI template
+# (sdlc-curriculum/shared/ci/cross-platform-ci.yml), which has the same jobs.
+# Actions are pinned to full commit SHAs (organization policy); Dependabot keeps them current.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  container:
+    name: Container (podman)
+    runs-on: ubuntu-latest
+    env:
+      DP_RUNTIME: podman
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Show toolchain environment
+        run: make dp-info
+
+      - name: make check
+        run: make check
+
+  native:
+    name: Native (ubuntu-latest)
+    runs-on: ubuntu-latest
+    env:
+      DP_RUNTIME: local
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: make check
+        run: make check
+
+  shared-tooling:
+    name: Shared tooling
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: tools/dp-run and tools/container.mk match the canonical copies
+        run: |
+          status=0
+          for file in tools/dp-run tools/container.mk; do
+            curl -fsSL "https://raw.githubusercontent.com/dialectic-playground/.github/main/$file" \
+              | diff -u - "$file" \
+              || { echo "::error::$file differs from the canonical copy in dialectic-playground/.github"; status=1; }
+          done
+          exit "$status"
+
+  dco:
+    name: DCO
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository (full history)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Check Signed-off-by on every commit
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          status=0
+          for commit in $(git rev-list --no-merges "$BASE_SHA..$HEAD_SHA"); do
+            author="$(git log -1 --format='%an <%ae>' "$commit")"
+            case "$author" in *"[bot]@users.noreply.github.com>") continue ;; esac
+            if ! git log -1 --format=%B "$commit" | grep -qiF "Signed-off-by: $author"; then
+              echo "::error::Commit $commit is missing 'Signed-off-by: $author' (use git commit -s)"
+              status=1
+            fi
+          done
+          exit "$status"
+
+  ci-result:
+    name: CI result
+    if: always()
+    needs: [container, native, shared-tooling, dco]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any required job failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+
+      - name: All required jobs passed
+        run: echo "All required jobs succeeded or were skipped."
