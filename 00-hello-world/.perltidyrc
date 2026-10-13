@@ -1,0 +1,6 @@
+# perltidy settings for 00-hello-world (make format applies them; make lint checks them).
+--maximum-line-length=100
+--indent-columns=4
+--continuation-indentation=4
+--nooutdent-long-quotes
+--nospace-for-semicolon

@@ -13,7 +13,7 @@
 
 # Project directories whose implementation is complete enough to build and test, in
 # curriculum order (for example: 00-hello-world 01-echo). CI covers exactly these.
-IMPLEMENTED :=
+IMPLEMENTED := 00-hello-world
 
 DP_HOST_GOALS += help roundtrip
 include tools/container.mk
@@ -42,7 +42,7 @@ check-repository:
 	done; \
 	marker="TEMPLATE"; marker="$$marker:"; \
 	if grep -rn --exclude-dir=.git --exclude-dir=.github --exclude-dir=tools \
-	        --exclude-dir=$(CURRICULUM_ROOT) "$$marker" .; then \
+	        --exclude-dir=$(CURRICULUM_ROOT) --exclude-dir=local "$$marker" .; then \
 		echo "replace every $$marker marker listed above"; status=1; \
 	fi; \
 	[ $$status -eq 0 ] && echo "repository: standard files, $(CURRICULUM_ROOT), and project workspaces present"; \
@@ -56,6 +56,7 @@ toolchain:
 	@version="$$(perl -e 'print "$$^V\n"')"; echo "$$version"; echo "$$version" | grep -q '^v5\.42\.' \
 		|| { echo 'toolchain: expected a version matching ^v5\.42\.' >&2; exit 1; }
 	cpanm --version | head -1
+	perl -MCarton -e 'print "Carton $$Carton::VERSION\n"'
 
 projects:
 	@[ -n "$(strip $(IMPLEMENTED))" ] || echo "projects: none implemented yet (IMPLEMENTED is empty)"

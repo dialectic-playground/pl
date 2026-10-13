@@ -1,0 +1,9 @@
+# Perl::Critic policy for 00-hello-world: severity 3 ("harsh") and above; make lint fails on
+# any violation.
+severity = 3
+verbose = %f:%l:%c: %m (%p, severity %s)\n
+# Test files (src/t/*.t) are programs, not modules.
+program-extensions = .t
+
+[Modules::RequireExplicitPackage]
+exempt_scripts = 1
