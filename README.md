@@ -27,7 +27,7 @@ Perl implementation of the Dialectic Playground SDLC curriculum.
 
 📖 **Documentation:** <https://dialectic-playground.github.io/docs/reference/languages/pl/>
 
-This repository implements the eleven projects of the
+This repository implements the fifty-three projects of the
 [SDLC curriculum](https://github.com/dialectic-playground/sdlc-curriculum) in Perl. Each project is
 specified to the byte by the curriculum and verified by its black-box tests on Linux, macOS,
 and Windows.
@@ -73,14 +73,14 @@ code page (for example CJK on a cp1252 system) cannot be represented.
 
 ## Layout
 
-| Path                                  | Contents                                                                                                          |
-| :------------------------------------ | :---------------------------------------------------------------------------------------------------------------- |
-| `00-hello-world/` … `10-sys-monitor/` | One workspace per curriculum project: `Makefile` (with `DP_*` hooks), HLD, LLD, RTM, master test plan, and `src/` |
-| `sdlc-curriculum/`                    | The curriculum, as a git submodule pinned to a release tag                                                        |
-| `Makefile`                            | `make check` (repository, toolchain, implemented projects), `toolchain`, `projects`, `roundtrip`                  |
-| `Containerfile`, `.devcontainer/`     | The toolchain image and the matching dev container                                                                |
-| `tools/dp-run`, `tools/container.mk`  | Shared container tooling (copies of the canonical files in `dialectic-playground/.github`)                        |
-| `.github/workflows/ci.yml`            | CI: container and native (Linux, macOS, Windows) `make` targets, shared-tooling check, DCO                        |
+| Path                                 | Contents                                                                                                          |
+| :----------------------------------- | :---------------------------------------------------------------------------------------------------------------- |
+| `00-hello-world/` … `52-spacecraft/` | One workspace per curriculum project: `Makefile` (with `DP_*` hooks), HLD, LLD, RTM, master test plan, and `src/` |
+| `sdlc-curriculum/`                   | The curriculum, as a git submodule pinned to a release tag                                                        |
+| `Makefile`                           | `make check` (repository, toolchain, implemented projects), `toolchain`, `projects`, `roundtrip`                  |
+| `Containerfile`, `.devcontainer/`    | The toolchain image and the matching dev container                                                                |
+| `tools/dp-run`, `tools/container.mk` | Shared container tooling (copies of the canonical files in `dialectic-playground/.github`)                        |
+| `.github/workflows/ci.yml`           | CI: container and native (Linux, macOS, Windows) `make` targets, shared-tooling check, DCO                        |
 
 ## Development
 
