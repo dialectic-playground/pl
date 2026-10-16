@@ -24,3 +24,14 @@ updates:
       - dependency-name: "*"
         update-types:
           ["version-update:semver-major", "version-update:semver-minor"]
+
+  # Hook revisions in .pre-commit-config.yaml (enforced by the pre-commit CI job).
+  - package-ecosystem: pre-commit
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      pre-commit:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci

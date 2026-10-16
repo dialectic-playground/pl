@@ -1,0 +1,3 @@
+# Prettier uses its defaults here. This file also stops Prettier from picking up a
+# configuration file from a parent directory (for example one in $HOME).
+{}

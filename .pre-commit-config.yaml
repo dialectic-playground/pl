@@ -1,14 +1,8 @@
 ---
 # .pre-commit-config.yaml
-# Strict, language-agnostic pre-commit configuration with meta-checks and pre-commit.ci integration
+# Strict, language-agnostic pre-commit configuration with meta-checks, enforced in CI by the pre-commit job
 # If true, aborts the entire execution run after the first failed hook.
 fail_fast: true
-
-ci:
-  autofix_commit_msg: "[pre-commit.ci] auto fixes by pre-commit hooks"
-  autofix_prs: true
-  autoupdate_commit_msg: "[pre-commit.ci] weekly dependency autoupdate"
-  autoupdate_schedule: weekly
 
 repos:
   # Internal pre-commit meta-hooks to maintain configuration health
@@ -17,10 +11,6 @@ repos:
       - id: check-useless-excludes
       - id: check-hooks-apply
   # Validates the integrity of the pre-commit.ci block configuration above
-  - repo: https://github.com/pre-commit-ci/pre-commit-ci-config
-    rev: v1.6.1
-    hooks:
-      - id: check-pre-commit-ci-config
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -118,8 +108,8 @@ repos:
           - --title
           - "**Table of Contents** _generated with [DocToc](https://github.com/thlorenz/doctoc)_"
   # 4. Standard Formatting & Layout (Handles Markdown, JSON, YAML, etc.)
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v4.0.0-alpha.8
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.9.10
     hooks:
       - id: prettier
         types_or:
