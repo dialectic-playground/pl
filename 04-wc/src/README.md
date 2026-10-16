@@ -19,8 +19,12 @@ tests, and document templates. **Implementations live in separate language repos
 
 An implementation of `04-wc` is complete when, from its project directory:
 
-1. `make all` builds these executables into `BIN_DIR`: **dp-wc**. On Windows they may
-   have an `.exe` suffix.
+1. `make all` builds these executables into `BIN_DIR`: **dp-wc**. Each is a native
+   executable (with an `.exe` suffix on Windows) or a script that starts with a `#!` line,
+   which works on every OS, including Windows (see `shared/templates/BASE-MAKEFILE`).
+   `make install` puts the executable, or a launcher, into `$(BINDIR)`. Script payloads go
+   under `$(LIBDIR)/<repository>/<project>/`, and `make uninstall` removes everything it
+   installed.
 2. Every standard target in `shared/templates/BASE-MAKEFILE` works (`all install uninstall
 test check lint format clean distclean`), implemented with that language's usual tools.
 3. `make test` runs the language's unit tests, then passes all 10 public black-box tests.
