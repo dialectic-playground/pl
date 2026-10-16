@@ -1,3 +1,14 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+**Table of Contents** _generated with [DocToc](https://github.com/thlorenz/doctoc)_
+
+- [Source workspace: 00-hello-world](#source-workspace-00-hello-world)
+  - [Implementation contract](#implementation-contract)
+  - [Layout in a language repository](#layout-in-a-language-repository)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Source workspace: 00-hello-world
 
 This directory is intentionally language-neutral. The curriculum supplies the specifications,
@@ -8,10 +19,14 @@ tests, and document templates. **Implementations live in separate language repos
 
 An implementation of `00-hello-world` is complete when, from its project directory:
 
-1. `make all` builds these executables into `BIN_DIR`: **dp-hello**. On Windows they may
-   have an `.exe` suffix.
+1. `make all` builds these executables into `BIN_DIR`: **dp-hello**. Each is a native
+   executable (with an `.exe` suffix on Windows) or a script that starts with a `#!` line,
+   which works on every OS, including Windows (see `shared/templates/BASE-MAKEFILE`).
+   `make install` puts the executable, or a launcher, into `$(BINDIR)`. Script payloads go
+   under `$(LIBDIR)/<repository>/<project>/`, and `make uninstall` removes everything it
+   installed.
 2. Every standard target in `shared/templates/BASE-MAKEFILE` works (`all install uninstall
-   test check lint format clean distclean`), implemented with that language's usual tools.
+test check lint format clean distclean`), implemented with that language's usual tools.
 3. `make test` runs the language's unit tests, then passes all 10 public black-box tests.
 4. `make test-hidden` passes all 10 hidden black-box tests on Linux, macOS, and Windows, as
    run by `shared/ci/cross-platform-ci.yml`.

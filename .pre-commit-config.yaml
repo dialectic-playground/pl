@@ -1,0 +1,152 @@
+---
+# .pre-commit-config.yaml
+# Strict, language-agnostic pre-commit configuration with meta-checks and pre-commit.ci integration
+# If true, aborts the entire execution run after the first failed hook.
+fail_fast: true
+
+ci:
+  autofix_commit_msg: "[pre-commit.ci] auto fixes by pre-commit hooks"
+  autofix_prs: true
+  autoupdate_commit_msg: "[pre-commit.ci] weekly dependency autoupdate"
+  autoupdate_schedule: weekly
+
+repos:
+  # Internal pre-commit meta-hooks to maintain configuration health
+  - repo: meta
+    hooks:
+      - id: check-useless-excludes
+      - id: check-hooks-apply
+  # Validates the integrity of the pre-commit.ci block configuration above
+  - repo: https://github.com/pre-commit-ci/pre-commit-ci-config
+    rev: v1.6.1
+    hooks:
+      - id: check-pre-commit-ci-config
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        name: check for added large files
+        args:
+          - --maxkb
+          - "1024"
+      - id: check-case-conflict
+        name: check for case conflicts
+      - id: check-executables-have-shebangs
+        name: check that executables have shebangs
+      - id: check-illegal-windows-names
+        name: check illegal windows names
+      - id: check-json
+        name: check json
+      - id: check-shebang-scripts-are-executable
+        name: check that scripts with shebangs are executable
+      - id: pretty-format-json
+        name: pretty format json
+        args:
+          - --autofix
+          - --indent
+          - "2"
+          - --no-sort-keys
+      - id: check-merge-conflict
+        name: check for merge conflicts
+      - id: check-vcs-permalinks
+        name: check vcs permalinks
+      - id: check-yaml
+        name: check yaml
+      - id: destroyed-symlinks
+        name: detect destroyed symlinks
+      - id: detect-aws-credentials
+        name: detect aws credentials
+        args:
+          - --allow-missing-credentials
+      - id: detect-private-key
+        name: detect private key
+      - id: end-of-file-fixer
+        name: fix end of files
+      - id: fix-byte-order-marker
+        name: fix utf-8 byte order marker
+      - id: forbid-submodules
+        name: forbid submodules
+        exclude: >
+          (?x)^(
+            sdlc-curriculum
+          )$
+      - id: mixed-line-ending
+        name: mixed line ending
+      - id: no-commit-to-branch
+        name: "don't commit to branch"
+      - id: trailing-whitespace
+        name: trim trailing whitespace
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
+        name: Detect hardcoded secrets, API keys, and credentials
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.3
+    hooks:
+      - id: codespell
+        name: Catch spelling mistakes in comments, strings, and documentation
+        args:
+          - --ignore-words-list
+          - invokable,nam,nd,pyhton,teh
+  # 1. Linting & Formatting (Node-based, widely adopted)
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.23.3
+    hooks:
+      - id: markdownlint-cli2
+        args:
+          - --fix
+  # 2. Advanced Prose Linting (Checks grammar, style, and tone)
+  - repo: https://github.com/amperser/proselint
+    rev: v0.16.0
+    hooks:
+      - id: proselint
+        types:
+          - markdown
+        args:
+          - check
+  # 3. Table of Contents Generator (Automatically keeps TOC updated)
+  - repo: https://github.com/thlorenz/doctoc
+    rev: v2.5.0
+    hooks:
+      - id: doctoc
+        args:
+          - --maxlevel
+          - "3"
+          - --toc-title-padding-before
+          - "1"
+          - --title
+          - "**Table of Contents** _generated with [DocToc](https://github.com/thlorenz/doctoc)_"
+  # 4. Standard Formatting & Layout (Handles Markdown, JSON, YAML, etc.)
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        types_or:
+          - markdown
+          - yaml
+  # 5. Core Whitespace Fixes (Crucial configuration change for Markdown)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        types:
+          - markdown
+        args:
+          - --markdown-linebreak-ext
+          - md
+      - id: end-of-file-fixer
+        types:
+          - markdown
+  - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
+    rev: 3.11.1
+    hooks:
+      - id: editorconfig-checker
+        name: Enforce global EditorConfig rules (spacing, newlines, charsets)
+        args:
+          - -disable-indent-size
+  # Keeps any shared hook additional_dependencies neatly synchronized
+  - repo: https://github.com/pre-commit/sync-pre-commit-deps
+    rev: v0.0.5
+    hooks:
+      - id: sync-pre-commit-deps

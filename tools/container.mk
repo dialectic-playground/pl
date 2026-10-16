@@ -32,16 +32,16 @@ DP_HOST_GOALS += dp-info dp-shell dp-image
 export DP_RUNTIME DP_IMAGE DP_PLATFORM DP_RUN_ARGS DP_QUIET
 
 ifeq ($(DP_IN_CONTAINER),)
-  DP_RESOLVED := $(shell $(DP_RUN) --resolve)
+	DP_RESOLVED := $(shell $(DP_RUN) --resolve)
 else
-  DP_RESOLVED := local
+	DP_RESOLVED := local
 endif
 
 DP_DELEGATE :=
 ifneq ($(DP_RESOLVED),local)
-  ifneq ($(filter-out $(DP_HOST_GOALS),$(or $(MAKECMDGOALS),.default)),)
-    DP_DELEGATE := 1
-  endif
+	ifneq ($(filter-out $(DP_HOST_GOALS),$(or $(MAKECMDGOALS),.default)),)
+		DP_DELEGATE := 1
+	endif
 endif
 
 .PHONY: dp-info dp-shell dp-image

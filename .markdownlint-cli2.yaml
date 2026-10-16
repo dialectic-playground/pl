@@ -1,0 +1,22 @@
+config:
+  # Prettier compatibility: disables rules that conflict with Prettier
+  extends: "markdownlint/style/prettier"
+
+  # Domain/spec exceptions:
+  MD033: false # no-inline-html: HTML tags like <sub> used in math and algorithm notation
+  MD036: false # no-emphasis-as-heading: single emphasis lines like `_(UR-01)_` following tables
+  MD037: false # no-space-in-emphasis: arithmetic multiplication * in calc and infix specs
+  MD038: false # no-space-in-code: exact prompt and whitespace tokens in code spans like ` `
+  MD041: false # first-line-heading: doctoc generates table-of-contents before H1
+  MD051: false # link-fragments: doctoc generates URL-encoded anchor fragments (e.g. %E2%86%92)
+  MD052: false # reference-links-images: array indexing notation like [i][j] in algorithm specs
+  MD058: false # blanks-around-tables: table formatting handled by Prettier
+  MD060: false # table-column-style: table formatting handled by Prettier
+
+globs:
+  - "**/*.md"
+
+ignores:
+  - "shared/templates/**"
+  - "projects/*/assignment/**"
+  - "projects/**/tests/**"

@@ -1,0 +1,26 @@
+{
+  "checks": {
+    "annotations.misc": false,
+    "cliches.misc.garner": false,
+    "dates_times.dates.month_of_year": false,
+    "industrial_language.corporate_speak": false,
+    "lexical_illusions": false,
+    "misc.capitalization.days": false,
+    "misc.capitalization.months": false,
+    "misc.greylist": false,
+    "misc.phrasal_adjectives.ly": false,
+    "misc.preferred_forms": false,
+    "needless_variants": false,
+    "redundancy.misc.after_the_deadline": false,
+    "typography.diacritical_marks": false,
+    "typography.punctuation.exclamation": false,
+    "typography.punctuation.hyperbole": false,
+    "typography.punctuation.spacing": false,
+    "typography.symbols.copyright": false,
+    "typography.symbols.curly_quotes": false,
+    "typography.symbols.ellipsis": false,
+    "typography.symbols.multiplication": false,
+    "typography.symbols.sentence_spacing": false,
+    "weasel_words.very": false
+  }
+}
