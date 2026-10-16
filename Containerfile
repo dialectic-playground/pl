@@ -6,6 +6,9 @@
 # release line is a deliberate change (keep `make toolchain` and the native CI in step).
 FROM docker.io/library/perl:5.42-slim-trixie@sha256:ae140b241337000207acd7da4676bb10e5d31865c5901d0f3b091d5df4775ab4
 
+# Debian keeps only the current version of each package, so apt versions cannot be pinned
+# reproducibly; the base image is pinned by digest instead.
+# hadolint ignore=DL3008
 RUN apt-get update \
     && apt-get install -y --no-install-recommends make python3 gcc libc6-dev \
     && rm -rf /var/lib/apt/lists/*
