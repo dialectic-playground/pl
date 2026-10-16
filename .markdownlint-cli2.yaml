@@ -13,6 +13,9 @@ config:
   MD058: false # blanks-around-tables: table formatting handled by Prettier
   MD060: false # table-column-style: table formatting handled by Prettier
 
+# Lint only files git tracks (skips node_modules, virtualenvs, build output).
+gitignore: true
+
 globs:
   - "**/*.md"
 
