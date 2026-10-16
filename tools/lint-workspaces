@@ -1,0 +1,20 @@
+#!/bin/sh
+# Run `make lint` in each implemented project workspace that contains one of the given files.
+#
+# Used by the workspace-lint pre-commit hook. The toolchain is resolved the repository's usual
+# way (the toolchain container via podman or docker, or the local system; see tools/container.mk),
+# so the check is exactly what CI runs. Unimplemented workspaces are skipped.
+set -eu
+
+# $(IMPLEMENTED) is make syntax, expanded by make, not by the shell.
+# shellcheck disable=SC2016
+implemented=$(printf 'print-implemented:\n\t@echo $(IMPLEMENTED)\n' |
+  DP_RUNTIME=local make -s --no-print-directory -f Makefile -f - print-implemented)
+
+status=0
+for workspace in $(printf '%s\n' "$@" | cut -d/ -f1 | sort -u); do
+  case " $implemented " in
+  *" $workspace "*) make --no-print-directory -C "$workspace" lint || status=1 ;;
+  esac
+done
+exit "$status"

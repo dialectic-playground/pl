@@ -175,9 +175,10 @@ jobs:
           key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
 
       # no-commit-to-branch guards local commits to main; CI legitimately runs on main.
+      # workspace-lint runs make lint, which the container and native jobs already run.
       - name: Run every hook on all files
         env:
-          SKIP: no-commit-to-branch
+          SKIP: no-commit-to-branch,workspace-lint
         run: |
           python -m pip install --disable-pip-version-check pre-commit==4.7.0
           pre-commit run --all-files --show-diff-on-failure --color always
