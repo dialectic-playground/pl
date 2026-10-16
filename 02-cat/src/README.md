@@ -1,3 +1,14 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+**Table of Contents** _generated with [DocToc](https://github.com/thlorenz/doctoc)_
+
+- [Source workspace: 02-cat](#source-workspace-02-cat)
+  - [Implementation contract](#implementation-contract)
+  - [Layout in a language repository](#layout-in-a-language-repository)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Source workspace: 02-cat
 
 This directory is intentionally language-neutral. The curriculum supplies the specifications,
@@ -11,7 +22,7 @@ An implementation of `02-cat` is complete when, from its project directory:
 1. `make all` builds these executables into `BIN_DIR`: **dp-cat**. On Windows they may
    have an `.exe` suffix.
 2. Every standard target in `shared/templates/BASE-MAKEFILE` works (`all install uninstall
-   test check lint format clean distclean`), implemented with that language's usual tools.
+test check lint format clean distclean`), implemented with that language's usual tools.
 3. `make test` runs the language's unit tests, then passes all 10 public black-box tests.
 4. `make test-hidden` passes all 10 hidden black-box tests on Linux, macOS, and Windows, as
    run by `shared/ci/cross-platform-ci.yml`.

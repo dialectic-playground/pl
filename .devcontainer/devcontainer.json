@@ -1,6 +1,4 @@
 {
-  // Dev container for VS Code, JetBrains, and Codespaces. It uses the same image as
-  // `make` and CI (../Containerfile). For Podman, set "dev.containers.dockerPath": "podman".
   "name": "dialectic-playground/pl",
   "build": {
     "dockerfile": "../Containerfile",

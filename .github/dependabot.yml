@@ -22,4 +22,5 @@ updates:
     # `make toolchain`; Dependabot refreshes digests but never changes minor or major versions.
     ignore:
       - dependency-name: "*"
-        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+        update-types:
+          ["version-update:semver-major", "version-update:semver-minor"]

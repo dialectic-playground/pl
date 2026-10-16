@@ -79,7 +79,7 @@ jobs:
       - name: Set up Perl 5.42
         uses: shogo82148/actions-setup-perl@8b574cdc2dffdae49f803204a4f2b716a2fa1db7 # v1.44.2
         with:
-          perl-version: '5.42'
+          perl-version: "5.42"
 
       # Git Bash prepends /usr/bin (Git's own, older perl) to PATH in every bash step, ahead of
       # the Perl above. BASH_ENV re-prepends the directory of the Perl that pwsh resolves
