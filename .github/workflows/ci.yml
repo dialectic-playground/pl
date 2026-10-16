@@ -35,6 +35,7 @@ jobs:
       - name: Check out repository (with curriculum submodule)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           submodules: recursive
 
       - name: Show toolchain environment
@@ -60,6 +61,7 @@ jobs:
       - name: Check out repository (with curriculum submodule)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           submodules: recursive
 
       - name: Set up Python (black-box test runner)
@@ -112,6 +114,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: tools/dp-run and tools/container.mk match the canonical copies
         run: |
@@ -131,6 +135,7 @@ jobs:
       - name: Check out repository (full history)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Check Signed-off-by on every commit
@@ -149,10 +154,75 @@ jobs:
           done
           exit "$status"
 
+  pre-commit:
+    name: pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Cache pre-commit hook environments
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      # no-commit-to-branch guards local commits to main; CI legitimately runs on main.
+      # workspace-lint runs make lint, which the container and native jobs already run.
+      - name: Run every hook on all files
+        env:
+          SKIP: no-commit-to-branch,workspace-lint
+        run: |
+          python -m pip install --disable-pip-version-check pre-commit==4.7.0
+          pre-commit run --all-files --show-diff-on-failure --color always
+
+  pr-title:
+    name: PR title
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      # The title becomes the squash commit on main, so it must be a Conventional Commit.
+      # The title reaches the script only through the environment, never as code.
+      - name: Require a Conventional Commit title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9._/,-]+\))?!?: [^ ].*'
+          if printf '%s\n' "$TITLE" | grep -Eq "$pattern"; then
+            echo "PR title is a Conventional Commit: $TITLE"
+          else
+            echo "::error::PR title is not a Conventional Commit: $TITLE"
+            echo "Use '<type>[(scope)][!]: <description>', where type is one of build, chore, ci,"
+            echo "docs, feat, fix, perf, refactor, revert, style, or test."
+            exit 1
+          fi
+
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Block newly added dependencies with known vulnerabilities
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+
   ci-result:
     name: CI result
     if: always()
-    needs: [container, native, shared-tooling, dco]
+    needs:
+      - container
+      - native
+      - shared-tooling
+      - dco
+      - pre-commit
+      - pr-title
+      - dependency-review
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -174,7 +244,7 @@ jobs:
           bad=$(printf '%s\n' "$jobs" | awk -F '\t' -v ignored="$IGNORED_JOBS" '
             BEGIN { n = split(ignored, list, "|"); for (i = 1; i <= n; i++) skip[list[i]] = 1 }
             $1 in skip { next }
-            $1 == "DCO" && $2 == "skipped" { next }
+            ($1 == "DCO" || $1 == "PR title" || $1 == "Dependency review") && $2 == "skipped" { next }
             $2 != "success" { print }')
           if [ -n "$bad" ]; then
             echo "::error::Not every job succeeded:"

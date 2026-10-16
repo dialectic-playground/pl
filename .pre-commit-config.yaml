@@ -1,14 +1,8 @@
 ---
 # .pre-commit-config.yaml
-# Strict, language-agnostic pre-commit configuration with meta-checks and pre-commit.ci integration
+# Strict, language-agnostic pre-commit configuration with meta-checks, enforced in CI by the pre-commit job
 # If true, aborts the entire execution run after the first failed hook.
 fail_fast: true
-
-ci:
-  autofix_commit_msg: "[pre-commit.ci] auto fixes by pre-commit hooks"
-  autofix_prs: true
-  autoupdate_commit_msg: "[pre-commit.ci] weekly dependency autoupdate"
-  autoupdate_schedule: weekly
 
 repos:
   # Internal pre-commit meta-hooks to maintain configuration health
@@ -17,10 +11,6 @@ repos:
       - id: check-useless-excludes
       - id: check-hooks-apply
   # Validates the integrity of the pre-commit.ci block configuration above
-  - repo: https://github.com/pre-commit-ci/pre-commit-ci-config
-    rev: v1.6.1
-    hooks:
-      - id: check-pre-commit-ci-config
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -41,6 +31,8 @@ repos:
         name: check that scripts with shebangs are executable
       - id: pretty-format-json
         name: pretty format json
+        # Project workspaces format their JSON (lock files, manifests) with their own toolchain.
+        exclude: ^[0-9]{2}-[^/]+/
         args:
           - --autofix
           - --indent
@@ -94,6 +86,8 @@ repos:
     rev: v0.23.3
     hooks:
       - id: markdownlint-cli2
+        # One process: the config's globs make every batch lint (and fix) every file.
+        require_serial: true
         args:
           - --fix
   # 2. Advanced Prose Linting (Checks grammar, style, and tone)
@@ -118,8 +112,8 @@ repos:
           - --title
           - "**Table of Contents** _generated with [DocToc](https://github.com/thlorenz/doctoc)_"
   # 4. Standard Formatting & Layout (Handles Markdown, JSON, YAML, etc.)
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v4.0.0-alpha.8
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.9.10
     hooks:
       - id: prettier
         types_or:
@@ -150,3 +144,35 @@ repos:
     rev: v0.0.5
     hooks:
       - id: sync-pre-commit-deps
+  # GitHub Actions workflows, shell scripts, Containerfiles, and Dependabot configuration
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.31.1
+    hooks:
+      - id: zizmor
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+  - repo: https://github.com/AleksaC/hadolint-py
+    rev: v2.15.1
+    hooks:
+      - id: hadolint
+        files: (^|/)Containerfile$
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.38.2
+    hooks:
+      - id: check-dependabot
+  # Each project's own lint (make lint: its formatter and linters, with its pinned toolchain)
+  # for implemented workspaces with changes. CI skips this hook; its build jobs run make lint.
+  - repo: local
+    hooks:
+      - id: workspace-lint
+        name: make lint (changed project workspaces)
+        language: system
+        entry: tools/lint-workspaces
+        files: ^[0-9]{2}-[^/]+/
+        require_serial: true
