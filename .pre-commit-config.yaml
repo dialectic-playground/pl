@@ -83,7 +83,7 @@ repos:
           - invokable,nam,nd,pyhton,teh
   # 1. Linting & Formatting (Node-based, widely adopted)
   - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.23.3
+    rev: v0.24.0
     hooks:
       - id: markdownlint-cli2
         # One process: the config's globs make every batch lint (and fix) every file.
@@ -150,7 +150,7 @@ repos:
     hooks:
       - id: actionlint
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: v1.31.1
+    rev: v1.32.0
     hooks:
       - id: zizmor
   - repo: https://github.com/shellcheck-py/shellcheck-py
@@ -163,7 +163,7 @@ repos:
       - id: hadolint
         files: (^|/)Containerfile$
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.38.2
+    rev: 0.39.0
     hooks:
       - id: check-dependabot
   # Each project's own lint (make lint: its formatter and linters, with its pinned toolchain)
